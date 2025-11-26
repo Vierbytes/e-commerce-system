@@ -168,4 +168,43 @@ export class APIService {
       throw new APIError('An unexpected error occurred while fetching products by category')
     }
   }
+
+  /**
+ * searchProducts Method
+ * Searches for products by keyword query
+ * @param query - The search term to look for
+ * @param limit - Maximum number of results to return, default set to 10
+ * @returns Promise<ProductData[]> - Array of matching products
+ * - URL encoding for search queries
+ * - Query parameters for search and `pagination` - which it the act of splitting large datasets into smaller chunks for a boost to performance
+ */
+  async searchProducts(query: string, limit: number = 10): Promise<ProductData[]> {
+    try {
+      // encodeURIComponent() helps make sure special characters in search query are properly encoded
+      // Example: 'phone case' becomes 'phone%20case' in the URL
+      // URL example: https://dummyjson.com/products/search?q=phone&limit=10
+      const response = await fetch(`${this.baseUrl}/products/search?q=${encodeURIComponent(query)}&limit=${limit}`)
+
+      if (!response.ok) {
+        throw new APIError(
+          `Failed to search products: ${response.statusText}`,
+          response.status
+        )
+      }
+
+      // Parse and return search results
+      const data = await response.json() as ProductsResponse
+      return data.products
+
+    } catch (error) {
+      // error handling
+      if (error instanceof APIError) {
+        throw error
+      }
+      if (error instanceof TypeError) {
+        throw new NetworkError('Network connection failed. Please check your internet connection.')
+      }
+      throw new APIError('An unexpected error occurred while searching products')
+    }
+  }
 }
