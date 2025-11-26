@@ -27,16 +27,16 @@ interface ProductsResponse {
  * Encapsulates all API communication logic
  */
 export class APIService {
-    private baseUrl: string  // Private property - can only be accessed within this class
+  private baseUrl: string  // Private property - can only be accessed within this class
 
   /**
    * Constructor
    * Initializes the API service with a base URL
    * @param baseUrl - The base URL for API requests defaults to DummyJSON URL
    */
-    constructor(baseUrl: string = BASE_URL) {
-      this.baseUrl = baseUrl
-    }
+  constructor(baseUrl: string = BASE_URL) {
+    this.baseUrl = baseUrl
+  }
 
   /**
  * fetchAllProducts Method
@@ -90,8 +90,8 @@ export class APIService {
     }
   }
 
-// Fetches a single product by its ID from the API
-    async fetchProductById(id: number): Promise<ProductData> {
+  // Fetches a single product by its ID from the API
+  async fetchProductById(id: number): Promise<ProductData> {
     try {
       // Make GET request to the products endpoint with the specific product ID
       const response = await fetch(`${this.baseUrl}/products/${id}`)
@@ -123,6 +123,49 @@ export class APIService {
       }
       // Catch-all for any other unexpected errors
       throw new APIError('An unexpected error occurred while fetching the product')
+    }
+  }
+
+  /**
+  * fetchProductsByCategory function
+  * Fetches products filtered by category
+  * @param category - The category name to filter by like 'laptops', 'beauty' anf others we can pass through the category variable
+  * @param limit - Maximum number of products to retrieve, which is set to 10
+  * @returns Promise<ProductData[]> - Array of products in the specified category
+  * - Path parameters for filtering - category
+  * - Query parameters for limiting results - limit
+  */
+  async fetchProductsByCategory(category: string, limit: number = 10): Promise<ProductData[]> {
+    try {
+      // Make GET request with both path parameter `category` and query parameter `limit`
+      // URL example: https://dummyjson.com/products/category/laptops?limit=10
+      const response = await fetch(`${this.baseUrl}/products/category/${category}?limit=${limit}`)
+
+      if (!response.ok) {
+        // Handle case where category doesn't exist
+        if (response.status === 404) {
+          throw new APIError(`Category '${category}' not found`, 404)
+        }
+
+        throw new APIError(
+          `Failed to fetch products by category: ${response.statusText}`,
+          response.status
+        )
+      }
+
+      // Parse response and extract products array
+      const data = await response.json() as ProductsResponse
+      return data.products
+
+    } catch (error) {
+      // Consistent error handling pattern
+      if (error instanceof APIError) {
+        throw error
+      }
+      if (error instanceof TypeError) {
+        throw new NetworkError('Network connection failed. Please check your internet connection.')
+      }
+      throw new APIError('An unexpected error occurred while fetching products by category')
     }
   }
 }
