@@ -89,4 +89,40 @@ export class APIService {
       throw new APIError('An unexpected error occurred while fetching products')
     }
   }
+
+// Fetches a single product by its ID from the API
+    async fetchProductById(id: number): Promise<ProductData> {
+    try {
+      // Make GET request to the products endpoint with the specific product ID
+      const response = await fetch(`${this.baseUrl}/products/${id}`)
+
+      // Check if the response status indicates failure status code outside 200-299 range
+      if (!response.ok) {
+        // Handle the specific case where the product doesn't exist
+        if (response.status === 404) {
+          throw new APIError(`Product with ID ${id} not found`, 404)
+        }
+        // Handle any other HTTP error responses like 500, 403, etc.
+        throw new APIError(
+          `Failed to fetch product: ${response.statusText}`,
+          response.status
+        )
+      }
+
+      // Parse the JSON response body and cast it to ProductData type
+      const data = await response.json() as ProductData
+      return data
+    } catch (error) {
+      // If we already threw an APIError above, re-throw it without modification
+      if (error instanceof APIError) {
+        throw error
+      }
+      // TypeError is thrown by fetch when there's a network failure
+      if (error instanceof TypeError) {
+        throw new NetworkError('Network connection failed. Please check your internet connection.')
+      }
+      // Catch-all for any other unexpected errors
+      throw new APIError('An unexpected error occurred while fetching the product')
+    }
+  }
 }
